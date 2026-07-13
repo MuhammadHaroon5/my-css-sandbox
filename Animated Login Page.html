@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Animated Login Form</title>
+    <style>
+      * {
+        padding: 0;
+        margin: 0;
+        box-sizing: border-box;
+      }
+
+      :root {
+        --lamp-color: white;
+        --light-color: rgb(239, 179, 0);
+        --light-color-low: rgba(239, 179, 0, 0.724);
+
+        /* form palette — tied to the lamp's warm light */
+        --ink: #f3ede0;
+        --line: rgba(243, 237, 224, 0.18);
+        --accent: var(--light-color);
+        --card-bg: rgba(24, 22, 18, 0.6);
+      }
+
+      body {
+        background-color: black;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        gap: 4rem;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+      }
+
+
+      .lamp {
+        width: 5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+      }
+
+      .lamp-head {
+        width: 100%;
+        height: 2rem;
+        background-color: var(--lamp-color);
+        border-radius: 5rem 5rem 0.5rem 0.5rem;
+        position: relative;
+      }
+
+      .lamp-light {
+        position: absolute;
+        top: 1.5rem;
+        border-radius: 100%;
+        width: 100%;
+        height: 1rem;
+        z-index: -2;
+        background-color: transparent;
+        transition:
+          background-color 0.3s ease,
+          box-shadow 0.3s ease;
+      }
+
+      .lamp-light.on {
+        background-color: var(--light-color-low);
+        box-shadow: 0 0 40px 15px var(--light-color-low);
+      }
+
+      .lamp-light-toggler {
+        position: absolute;
+        top: 2rem;
+        right: 1.3rem;
+        width: 3px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .lamp-light-toggler-stick {
+        width: 100%;
+        height: 3rem;
+        background-color: rgb(60, 58, 58);
+        transform-origin: top;
+        touch-action: none;
+      }
+
+      .lamp-light-toggler-holder {
+        width: 6px;
+        height: 6px;
+        padding: 4px;
+        margin-top: 0;
+        border-radius: 100%;
+        background-color: var(--light-color);
+        cursor: grab;
+        touch-action: none;
+      }
+
+      .lamp-light-toggler-holder:active {
+        cursor: grabbing;
+      }
+
+      .lamp-stand {
+        width: 10px;
+        height: 7rem;
+        background-color: var(--lamp-color);
+      }
+
+      .lamp-foot {
+        width: 3rem;
+        height: 8px;
+        background-color: var(--lamp-color);
+        border-radius: 4px;
+      }
+
+      /* ! FORM WRAPPER — hidden until the lamp is switched on */
+      .form-wrapper {
+        opacity: 0;
+        transform: translateY(24px) scale(0.94);
+        filter: blur(8px);
+        pointer-events: none;
+        user-select: none;
+        transition:
+          opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+          transform 0.55s cubic-bezier(0.34, 1.4, 0.64, 1),
+          filter 0.55s ease;
+      }
+
+      .form-wrapper.active {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        filter: blur(0);
+        pointer-events: auto;
+      }
+
+      .pt {
+        padding-top: 1rem;
+      }
+
+      /* ! FORM STYLES */
+      .login-card {
+        width: 360px;
+        padding: 36px 32px;
+        background: transparent;
+        border: 1px solid rgba(239, 179, 0, 0.35);
+        border-radius: 14px;
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        box-shadow:
+          0 0 0 1px rgba(239, 179, 0, 0.08),
+          0 20px 60px -20px rgba(0, 0, 0, 0.8),
+          0 0 45px -10px var(--light-color-low);
+        transition: box-shadow 0.6s ease;
+      }
+
+      .login-card__title {
+        margin: 0 0 4px;
+        font-size: 22px;
+        color: var(--ink);
+        letter-spacing: 0.01em;
+      }
+
+      .login-card__subtitle {
+        margin: 0 0 28px;
+        font-size: 14px;
+        color: var(--ink);
+        opacity: 0.55;
+      }
+
+      .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      /* --- floating label input --- */
+      .field {
+        position: relative;
+      }
+
+      .field__icon {
+        position: absolute;
+        left: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        color: var(--ink);
+        opacity: 0.45;
+        transition:
+          opacity 0.25s ease,
+          color 0.25s ease;
+        pointer-events: none;
+      }
+
+      .field__input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 20px 14px 7px 42px;
+        font-size: 15px;
+        font-family: inherit;
+        color: var(--ink);
+        background: transparent;
+        border: none;
+        border-bottom: 1.5px solid var(--line);
+        outline: none;
+        transition: border-color 0.25s ease;
+      }
+
+      .field__label {
+        position: absolute;
+        left: 42px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 14px;
+        color: var(--ink);
+        opacity: 0.45;
+        pointer-events: none;
+        transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .field__input:focus ~ .field__label,
+      .field__input:not(:placeholder-shown) ~ .field__label {
+        top: 9px;
+        left: 14px;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        opacity: 0.9;
+        color: var(--accent);
+      }
+
+      .field__input:focus ~ .field__icon,
+      .field__input:not(:placeholder-shown) ~ .field__icon {
+        opacity: 1;
+        color: var(--accent);
+      }
+
+      .field__input:focus {
+        border-bottom-color: var(--accent);
+      }
+
+      .field__underline {
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        height: 1.5px;
+        width: 100%;
+        background: var(--accent);
+        box-shadow: 0 0 8px var(--light-color-low);
+        transform: scaleX(0);
+        transform-origin: left;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .field__input:focus ~ .field__underline {
+        transform: scaleX(1);
+      }
+
+      .field__input::placeholder {
+        color: transparent;
+      }
+
+      /* --- links & buttons --- */
+      .login-form__forgot {
+        align-self: flex-end;
+        margin-top: -14px;
+        font-size: 12.5px;
+        color: var(--accent);
+        text-decoration: none;
+        opacity: 0.85;
+      }
+      .login-form__forgot:hover {
+        text-decoration: underline;
+      }
+
+      .login-btn {
+        margin-top: 8px;
+        padding: 13px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #1a1a1a;
+        background: var(--accent);
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        box-shadow: 0 8px 24px -8px var(--light-color-low);
+        transition:
+          background 0.2s ease,
+          transform 0.15s ease,
+          box-shadow 0.2s ease;
+      }
+      .login-btn:hover {
+        background: #ffcc33;
+        box-shadow: 0 10px 30px -6px var(--light-color-low);
+      }
+      .login-btn:active {
+        transform: scale(0.98);
+      }
+
+      .divider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: var(--ink);
+        opacity: 0.4;
+        font-size: 12px;
+      }
+      .divider::before,
+      .divider::after {
+        content: "";
+        flex: 1;
+        height: 1px;
+        background: var(--line);
+      }
+
+      .google-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 11px;
+        font-size: 14px;
+        font-family: inherit;
+        color: var(--ink);
+        background: rgba(255, 255, 255, 0.04);
+        border: 1.5px solid var(--line);
+        border-radius: 8px;
+        cursor: pointer;
+        transition:
+          background 0.2s ease,
+          border-color 0.2s ease;
+      }
+      .google-btn:hover {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="lamp-wrapper">
+      <div class="lamp">
+        <div class="lamp-head">
+          <div class="lamp-light"></div>
+          <div class="lamp-light-toggler">
+            <div class="lamp-light-toggler-stick"></div>
+            <div class="lamp-light-toggler-holder"></div>
+          </div>
+        </div>
+        <div class="lamp-stand"></div>
+        <div class="lamp-foot"></div>
+      </div>
+    </div>
+
+    <div class="form-wrapper">
+      <div class="login-card">
+        <h2 class="login-card__title">Welcome back</h2>
+        <p class="login-card__subtitle">Log in to your account</p>
+
+        <form class="login-form">
+          <div class="field">
+            <input class="field__input" type="email" id="email" placeholder="Email address" autocomplete="off" required />
+            <label class="field__label" for="email">Email address</label>
+            <svg class="field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <path d="M3 6.5 12 13l9-6.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="3" y="5" width="18" height="14" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="field__underline"></span>
+          </div>
+
+          <div class="field">
+            <input class="field__input" type="password" id="password" placeholder="Password" autocomplete="off" required />
+            <label class="field__label" for="password">Password</label>
+            <svg class="field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="4" y="10" width="16" height="10" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="field__underline"></span>
+          </div>
+
+          <a class="login-form__forgot pt" href="#">Forgot password?</a>
+
+          <button type="submit" class="login-btn">Log in</button>
+
+          <div class="divider">
+            <span>or</span>
+          </div>
+
+          <button type="button" class="google-btn">
+            <svg viewBox="0 0 48 48" width="18" height="18">
+              <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.9-2.26 5.36-4.78 7.02l7.73 6c4.51-4.18 7.09-10.36 7.09-17.49z"/>
+              <path fill="#FBBC05" d="M10.53 28.59A14.5 14.5 0 0 1 9.5 24c0-1.59.27-3.13.76-4.59l-7.98-6.19A24 24 0 0 0 0 24c0 3.88.93 7.54 2.56 10.78l7.97-6.19z"/>
+              <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+            </svg>
+            <span>Sign up with Google</span>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      const stick = document.querySelector(".lamp-light-toggler-stick");
+      const holder = document.querySelector(".lamp-light-toggler-holder");
+      const light = document.querySelector(".lamp-light");
+      const formWrapper = document.querySelector(".form-wrapper");
+
+      const STICK_HEIGHT = stick.offsetHeight;
+
+      let dragging = false;
+      let startY = 0;
+      const MAX_PULL = 34;
+      const THRESHOLD = 16;
+
+      function bouncy(el) {
+        el.style.transition = "transform 0.45s cubic-bezier(.34, 1.8, .64, 1)";
+      }
+
+      function noTransition(el) {
+        el.style.transition = "none";
+      }
+
+      function setPull(dist) {
+        const scale = (STICK_HEIGHT + dist) / STICK_HEIGHT;
+        stick.style.transform = `scaleY(${scale})`;
+        holder.style.transform = `translateY(${dist}px)`;
+      }
+
+      function start(e) {
+        dragging = true;
+        startY = e.touches ? e.touches[0].clientY : e.clientY;
+        noTransition(stick);
+        noTransition(holder);
+      }
+
+      function move(e) {
+        if (!dragging) return;
+        const y = e.touches ? e.touches[0].clientY : e.clientY;
+        let dist = Math.max(0, y - startY);
+        dist = Math.min(dist, MAX_PULL) + Math.max(0, dist - MAX_PULL) * 0.08;
+        setPull(dist);
+      }
+
+      function end(e) {
+        if (!dragging) return;
+        dragging = false;
+        const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+        const dist = Math.max(0, y - startY);
+        if (dist > THRESHOLD) {
+          if (light.classList.contains("on")) {
+            light.classList.remove("on");
+            handleLampOff();
+          } else {
+            light.classList.add("on");
+            handleLampOn();
+          }
+        }
+        bouncy(stick);
+        bouncy(holder);
+        setPull(0);
+      }
+
+      const handleLampOn = () => {
+        formWrapper.classList.add("active");
+      };
+      const handleLampOff = () => {
+        formWrapper.classList.remove("active");
+      };
+
+      holder.addEventListener("mousedown", start);
+      holder.addEventListener("touchstart", start, { passive: true });
+      window.addEventListener("mousemove", move);
+      window.addEventListener("touchmove", move, { passive: true });
+      window.addEventListener("mouseup", end);
+      window.addEventListener("touchend", end);
+    </script>
+  </body>
+</html>
